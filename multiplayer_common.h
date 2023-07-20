@@ -58,6 +58,23 @@ typedef struct PlayerDescription
     Vector2 handsDir = {0,1};
     static constexpr float acc = 1000.f;
     static constexpr float radius = 30.f;
+    
+    bool Update(float deltaTime, Vector2 delta_v = {0,0})
+    {
+      const float deceleration = 100 * deltaTime;
+      if(Vector2DistanceSqr({0,0}, vel+delta_v) > deceleration)
+      { 
+        // add deceleration
+        delta_v -= Vector2Normalize(vel) * deceleration; 
+        vel += delta_v; //* 0.5f;
+        pos += vel * deltaTime;
+        // vel += delta_v * 0.5f;
+        return true;
+      }
+      // stop
+      vel = delta_v = {0,0};    
+      return false;
+    }
   } phys;
   
   PlayerDescription() = default;
@@ -67,77 +84,72 @@ typedef struct PlayerDescription
 
   friend bool operator==(const PlayerDescription& p1, const PlayerDescription& p2)
   {return p1.uUniqueID == p2.uUniqueID;}
+  
+  
 } Player;
 
 
-inline void UpdatePlayerCollisions(
-  PlayerDescription& pdata, 
-  std::unordered_map<idT, PlayerDescription>& players,
+inline bool UpdatePlayerCollisions(
+  PlayerDescription::PlayerPhysDesc& playerA,
+  PlayerDescription::PlayerPhysDesc& playerB, 
   std::function<void(idT)> affected = [](idT id){})
 {
-  auto player = pdata.phys;
+  // Check collision
+  if(!CheckCollisionCircles(playerA.pos, playerA.radius, playerB.pos, playerB.radius))
+    return false;
 
+  // Apply appropriet physical reaction
+  float dist = Vector2Distance(playerA.pos, playerB.pos)+std::numeric_limits<float>::epsilon();
+  float overlap = 0.5f * (dist - playerA.radius - playerB.radius);
 
+  Vector2 normal = (playerB.pos - playerA.pos)/dist; // tangent -> player
+  // apply offset collisions
+  playerA.pos += normal * overlap;
+  playerB.pos -= normal * overlap;
+  
+  // Long version 
+  // Vector2 tangent = {-normal.y,normal.x};  
+  // // tangent response
+  // float tan1 = Vector2DotProduct(player.vel, tangent);
+  // float tan2 = Vector2DotProduct(target.vel, tangent);
+  // // normal response
+  // float norm1 = Vector2DotProduct(player.vel, normal);
+  // float norm2 = Vector2DotProduct(target.vel, normal);
+  // normal momentum is exchanged, because they are the same mass
+  // player.vel = tangent * tan1 + normal * norm2;
+  // target.vel = tangent * tan2 + normal * norm1;
+
+  // simplified version
+  Vector2 k = playerA.vel - playerB.vel;
+  float p = normal.x * k.x + normal.y * k.y;
+  playerA.vel -= normal * p;
+  playerB.vel += normal * p;
+
+  return true;
+}
+
+inline void UpdatePlayerPeramiterCollisions(
+  PlayerDescription::PlayerPhysDesc& player)
+{
   // // World border collisions
-  // if(player.pos.x + player.radius >= WORLD_SIZE)
-  // {
-  //   player.pos.x = WORLD_SIZE - player.radius;
-  //   player.vel.y = - abs(player.vel.y);
-  // }
-  // if(player.pos.x - player.radius <= 0)
-  // {
-  //   player.pos.x = player.radius;
-  //   player.vel.y = abs(player.vel.y);
-  // }
-  // if(player.pos.y + player.radius >= WORLD_SIZE)
-  // {
-  //   player.pos.y = WORLD_SIZE - player.radius;
-  //   player.vel.x = - abs(player.vel.x);
-  // }
-  // if(player.pos.y - player.radius <= 0)
-  // {
-  //   player.pos.y = player.radius;
-  //   player.vel.x = abs(player.vel.x);
-  // }
-  
-  
-  for(auto& d : players)
+  if(player.pos.x + player.radius >= WORLD_SIZE)
   {
-    auto& target = d.second.phys;
-    if(d.second == pdata) continue;
-
-    if(CheckCollisionCircles(player.pos, player.radius, target.pos, target.radius))
-    {
-      float dist = Vector2Distance(player.pos, target.pos)+std::numeric_limits<float>::epsilon();
-      float overlap = 0.5f * (dist - player.radius - target.radius);
-
-      Vector2 normal = (target.pos - player.pos)/dist; // tangent -> player
-      // Vector2 tangent = {-normal.y,normal.x};  
-      
-      // // tangent response
-      // float tan1 = Vector2DotProduct(player.vel, tangent);
-      // float tan2 = Vector2DotProduct(target.vel, tangent);
-      // // normal response
-      // float norm1 = Vector2DotProduct(player.vel, normal);
-      // float norm2 = Vector2DotProduct(target.vel, normal);
-
-
-      
-      // normal momentum is exchanged, because they are the same mass
-      // player.vel = tangent * tan1 + normal * norm2;
-      // target.vel = tangent * tan2 + normal * norm1;
-      
-      // apply offset collisions
-      player.pos += normal * overlap;
-      target.pos -= normal * overlap;
-
-      // simplified version
-      Vector2 k = player.vel - target.vel;
-      float p = normal.x * k.x + normal.y * k.y;
-      player.vel -= normal * p;
-      target.vel += normal * p;
-      
-      affected(d.second.uUniqueID);
-    }
+    player.pos.x = WORLD_SIZE - player.radius;
+    player.vel.y = - abs(player.vel.y);
+  }
+  if(player.pos.x - player.radius <= 0)
+  {
+    player.pos.x = player.radius;
+    player.vel.y = abs(player.vel.y);
+  }
+  if(player.pos.y + player.radius >= WORLD_SIZE)
+  {
+    player.pos.y = WORLD_SIZE - player.radius;
+    player.vel.x = - abs(player.vel.x);
+  }
+  if(player.pos.y - player.radius <= 0)
+  {
+    player.pos.y = player.radius;
+    player.vel.x = abs(player.vel.x);
   }
 }

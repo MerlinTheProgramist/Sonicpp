@@ -103,7 +103,7 @@ private:
     return false;
   }
   
-  void Update(float dt)
+  void Update(float deltaTime)
   {
     // Check for incoming messages
     if(IsConnected())
@@ -168,8 +168,10 @@ private:
             
             // desc.vel = players[desc.uUniqueID].vel;
             players[id].phys = physDesc;
-              
-            UpdatePlayerCollisions(players[id], players);
+
+            // Check collisions with other objects
+            for(auto& object : players)
+              UpdatePlayerCollisions(players[id].phys, object.second.phys);
           }
           break;
           case GameMsg::Game_UpdatePlayerLook:
@@ -198,10 +200,10 @@ private:
     if(bWaitingForConnection)
        return;
     
-    auto& player = players[thisPlayerID].phys;
+    auto& playerPhys = players[thisPlayerID].phys;
 
     Vector2 mouseDir = Vector2Normalize(GetMousePosition() - screenCenter);
-    player.handsDir = mouseDir;
+    playerPhys.handsDir = mouseDir;
     
     Vector2 delta_v = {0,0};
     
@@ -224,27 +226,10 @@ private:
       }
       lookChangeMenu = !lookChangeMenu;
     }
-    delta_v = Vector2Normalize(delta_v) * player.acc * dt;
+    delta_v = Vector2Normalize(delta_v) * playerPhys.acc * deltaTime;
       
+    playerPhys.Update(deltaTime, delta_v);
 
-    const float deceleration = 100 * dt;
-    if(Vector2DistanceSqr({0,0}, player.vel+delta_v) > deceleration)
-    { 
-      // Check Collisions
-      // for(auto& otherPlayer : players)
-        // PlayerCollide(player, otherPlayer.second);          
-
-      // add deceleration
-      delta_v -= Vector2Normalize(player.vel) * deceleration; 
-      player.vel += delta_v; //* 0.5f;
-      player.pos += player.vel * dt;
-      // player.vel += delta_v * 0.5f;
-
-    }
-    else 
-      // stop
-      player.vel = delta_v = {0,0};    
-    
     // Send myPlayer data to server
     message msg{};
     msg.header.id = GameMsg::Game_UpdatePlayer;
@@ -254,8 +239,14 @@ private:
     // Collision on client side
     for(auto& d1 : players)
     {
-      auto& ball = d1.second;
-      UpdatePlayerCollisions(ball, players);
+      auto& p1 = d1.second;
+      p1.phys.Update(deltaTime);
+      for(auto& d2 : players)
+      {
+        auto& p2 = d2.second;
+        if(p1 == p2) continue;
+        UpdatePlayerCollisions(p1.phys, p2.phys);
+      }
     }
 
     
@@ -266,13 +257,13 @@ private:
   
   void draw_grid_background()
   {
-      const int tile_size = 50;
-      for (int i = -GRID_SIZE; i < GRID_SIZE; i ++)
-      {
-          DrawLineEx((Vector2){GRID_SIZE * TILE_SIZE, TILE_SIZE*i}, (Vector2){-GRID_SIZE * TILE_SIZE, TILE_SIZE*i}, 1, GRID_COLOR);
+    const int tile_size = 50;
+    for (int i = -GRID_SIZE; i < GRID_SIZE; i ++)
+    {
+      DrawLineEx((Vector2){GRID_SIZE * TILE_SIZE, TILE_SIZE*i}, (Vector2){-GRID_SIZE * TILE_SIZE, TILE_SIZE*i}, 1, GRID_COLOR);
 
-          DrawLineEx((Vector2){TILE_SIZE*i, GRID_SIZE * TILE_SIZE}, (Vector2){TILE_SIZE*i, -GRID_SIZE * TILE_SIZE}, 1, GRID_COLOR);
-      }
+      DrawLineEx((Vector2){TILE_SIZE*i, GRID_SIZE * TILE_SIZE}, (Vector2){TILE_SIZE*i, -GRID_SIZE * TILE_SIZE}, 1, GRID_COLOR);
+    }
   }
 
 
