@@ -1,8 +1,21 @@
-This is a simple UDP network library for multiplayer games.
+# Soonic++
+Simple Object Oriented Networking In C++   
+Lightweight header-only TCP networking library for multiplayer games in c++17
 
-Could be used for self hosting by starting a server instance with the client and connectin to it
+## Features
+- Simple virtual class based interface makes it easy to implement specific behaviour for important events
+- Built-in client verification system 
+- Messages are marked with user defined enumerable type
+- Capability to send any type of flat data data structure, std::string or std::vector
+- mutlithreaded server
+- Server can be launched along a Client, making it the host
 
-# Get Started
+## Check out examples
+2 of the provided examples require [raylib](https://www.raylib.com) and [raylib-cpp](https://github.com/RobLoach/raylib-cpp) to be compiled   
+build with `make` (provided Makefile in root) 
+
+
+## Getting Started
 1. Decide what types of data you will be sending
 ```cpp
 // common.h
@@ -166,6 +179,4 @@ int main(int argc, char* argv[])
   MyClient my_client{host_ip, host_ip};
 }
 ```
-# Example
-Some provided examples require raylib and raylib-cpp to be compiled
 
