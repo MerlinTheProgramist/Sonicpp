@@ -10,7 +10,7 @@ A simple UDP networking library for multiplayer games.
 
 # Check out examples
 2 of the provided examples require [raylib](https://www.raylib.com) and [raylib-cpp](https://github.com/RobLoach/raylib-cpp) to be compiled   
-build when with `make` (provided Makefile in root) 
+build with `make` (provided Makefile in root) 
 
 
 # Getting Started
