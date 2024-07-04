@@ -1,5 +1,5 @@
 # Soonic++
-Simple Object Oriented Networking In C++ 
+Simple Object Oriented Networking In C++   
 Lightwaight header-only TCP networking library for multiplayer games in c++17
 
 ## Features
