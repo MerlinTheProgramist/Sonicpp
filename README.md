@@ -1,6 +1,6 @@
 # Soonic++
 Simple Object Oriented Networking In C++   
-Lightwaight header-only TCP networking library for multiplayer games in c++17
+Lightweight header-only TCP networking library for multiplayer games in c++17
 
 ## Features
 - Simple virtual class based interface makes it easy to implement specific behaviour for important events
