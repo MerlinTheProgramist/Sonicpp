@@ -1,19 +1,18 @@
 #pragma once
 
 #include <cstdint>
-#include <unordered_map>
 #include <functional>
-#include <climits>
 #include <limits>
 
-#include "include/raylib.h"
-#include "include/RaylibOpOverloads.hpp"
+#include <raylib-cpp.hpp>
+#include <raylib.h>
 
 #define GRID_SIZE 100.f
 #define TILE_SIZE 300.f
 #define GRID_COLOR DARKGREEN
 
 #define WORLD_SIZE (int)(TILE_SIZE * 10)
+
 
 enum class GameMsg : uint32_t
 {
@@ -42,37 +41,38 @@ typedef struct PlayerDescription
 
   struct PlayerLookDesc
   {
-    Color color = WHITE;
-    Color left_hand_color = BLUE;
-    Color right_hand_color = RED;
-    static constexpr Vector2 left_hand_pos = {-10, 15};
-    static constexpr Vector2 right_hand_pos = {10, 15};
+    raylib::Color color = WHITE;
+    raylib::Color left_hand_color = BLUE;
+    raylib::Color right_hand_color = RED;
+    static const raylib::Vector2 left_hand_pos;
+    static const raylib::Vector2 right_hand_pos;
     static constexpr float hand_width = 15;
     static constexpr float hand_length = 40;
   } look;
 
   struct PlayerPhysDesc
   {
-    Vector2 pos = {0,0};
-    Vector2 vel = {0,0};
-    Vector2 handsDir = {0,1};
+    raylib::Vector2 pos = {0,0};
+    raylib::Vector2 vel = {0,0};
+    raylib::Vector2 handsDir = {0,1};
     static constexpr float acc = 1000.f;
     static constexpr float radius = 30.f;
     
-    bool Update(float deltaTime, Vector2 delta_v = {0,0})
+    bool Update(float deltaTime, raylib::Vector2 delta_v = {0,0})
     {
       const float deceleration = 100 * deltaTime;
       if(Vector2DistanceSqr({0,0}, vel+delta_v) > deceleration)
       { 
+
         // add deceleration
-        delta_v -= Vector2Normalize(vel) * deceleration; 
+        delta_v -= vel.Normalize() * deceleration; 
         vel += delta_v; //* 0.5f;
         pos += vel * deltaTime;
         // vel += delta_v * 0.5f;
         return true;
       }
       // stop
-      vel = delta_v = {0,0};    
+      vel = raylib::Vector2{0,0};    
       return false;
     }
   } phys;
@@ -102,7 +102,7 @@ inline bool UpdatePlayerCollisions(
   float dist = Vector2Distance(playerA.pos, playerB.pos)+std::numeric_limits<float>::epsilon();
   float overlap = 0.5f * (dist - playerA.radius - playerB.radius);
 
-  Vector2 normal = (playerB.pos - playerA.pos)/dist; // tangent -> player
+  raylib::Vector2 normal = (playerB.pos - playerA.pos)/dist; // tangent -> player
   // apply offset collisions
   playerA.pos += normal * overlap;
   playerB.pos -= normal * overlap;
@@ -120,7 +120,7 @@ inline bool UpdatePlayerCollisions(
   // target.vel = tangent * tan2 + normal * norm1;
 
   // simplified version
-  Vector2 k = playerA.vel - playerB.vel;
+  raylib::Vector2 k = playerA.vel - playerB.vel;
   float p = normal.x * k.x + normal.y * k.y;
   playerA.vel -= normal * p;
   playerB.vel += normal * p;
@@ -153,3 +153,5 @@ inline void UpdatePlayerPeramiterCollisions(
     player.vel.x = abs(player.vel.x);
   }
 }
+const raylib::Vector2 PlayerDescription::PlayerLookDesc::left_hand_pos{-10, 15};
+const raylib::Vector2 PlayerDescription::PlayerLookDesc::right_hand_pos{10, 15};

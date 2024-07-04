@@ -12,6 +12,12 @@ namespace net_frame
   template<typename T>
   class tsqueue
   {
+  protected:
+    std::mutex muxQueue{};
+    std::deque<T> deqQueue{};  
+
+    std::condition_variable cvBlocking{};
+    std::mutex muxBlocking{};
   public:
     tsqueue() = default;
     tsqueue(const tsqueue<T>&) = delete;
@@ -88,12 +94,6 @@ namespace net_frame
       }
     }
   
-  protected:
-    std::mutex muxQueue;
-    std::deque<T> deqQueue;  
-
-    std::condition_variable cvBlocking;
-    std::mutex muxBlocking;
   };
 
 }

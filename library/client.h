@@ -3,31 +3,46 @@
 #include "queue.h"
 #include "connection.h"
 #include "message.h"
+#include "server.h"
 
 #include <asio/ip/address.hpp>
 #include <memory>
 
 #include <asio.hpp>
+#include <optional>
 
 namespace net_frame{
 
   template<typename T>
-  class client_intefrace
+  class ClientIntefrace
   {
+  protected:
+    // specific Message alias
+    using Message = net_frame::Message<T>;
+
+    // context for handling data transfer
+    asio::io_context m_context;
+    // thread for the context to execute in separately from other stuff
+    std::thread thrContext;
+    // hardware socket that is connected to the interface
+    asio::ip::tcp::socket m_socket;
+    // instance of connection object, whitch handles data trasfer
+    std::unique_ptr<Connection<T>> m_connection;
+  private:
+    // This is the thread safe queue of incoming messages from the server
+    tsqueue<owned_message<T>> m_qMessagesIn;
+    
   public:
-    client_intefrace() : m_socket(m_context)
+    ClientIntefrace() : m_socket(m_context)
     {
 
     }
 
-    virtual ~client_intefrace()
+    virtual ~ClientIntefrace()
     {
       Disconnect();
     }
     
-  public:
-    using message = net_frame::message<T>;
-
     // Connect socket
     bool Connect(const std::string& host, const uint16_t port)
     {
@@ -40,8 +55,8 @@ namespace net_frame{
           resolver.resolve(host, std::to_string(port));
 
         // create connection
-        m_connection = std::make_unique<connection<T>>(
-            connection<T>::owner::client,
+        m_connection = std::make_unique<Connection<T>>(
+            Connection<T>::Owner::Client,
             m_context,
             asio::ip::tcp::socket(m_context), 
             m_qMessagesIn
@@ -89,27 +104,16 @@ namespace net_frame{
         return false; 
     }
 
-    tsqueue<owned_message<T>>& Incoming()
+    std::optional<Message> NextMessage()
     {
-      return m_qMessagesIn;
+      return (m_qMessagesIn.is_empty())?
+        std::nullopt :
+        std::make_optional(m_qMessagesIn.pop_front().msg);
     }
 
-    void Send(message& msg)
+    void Send(Message& msg)
     {
       m_connection->Send(msg);
     }
-    
-  protected:
-    // context for handling data transfer
-    asio::io_context m_context;
-    // thread for the context to execute in separately from other stuff
-    std::thread thrContext;
-    // hardware socket that is connected to the interface
-    asio::ip::tcp::socket m_socket;
-    // instance of connection object, whitch handles data trasfer
-    std::unique_ptr<connection<T>> m_connection;
-  private:
-    // This is the thread safe queue of incoming messages from the server
-    tsqueue<owned_message<T>> m_qMessagesIn;
   };
 }

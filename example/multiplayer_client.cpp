@@ -1,43 +1,48 @@
-#include <climits>
+#include <Functions.hpp>
+#include <Mouse.hpp>
 #include <cstdint>
+#include <raylib.h>
 #include <thread>
 #include <cmath>
-#include <unordered_map>
 
 // RAYLIB
-#include "include/raylib.h"
-#include "include/RaylibOpOverloads.hpp"
 #define RAYGUI_IMPLEMENTATION
-#include "include/raygui.h"
-#include "style_cyber.h"
+#include <raylib-cpp.hpp>
+#include "raygui.h"
 
-#include "library/client.h"
-#include "library/message.h"
-#include "multiplayer_common.h"
+#include "../library/client.h"
+#include "../library/message.h"
+#include "multiplayer_common.hpp"
 
 
 using namespace std::chrono_literals;
 
-class Game : public net_frame::client_intefrace<GameMsg>
+
+class Game : public net_frame::ClientIntefrace<GameMsg>
 {
+private:
+  const raylib::Vector2 screenSize{1200,800};
+  raylib::Camera2D mainCamera{};
   
-  const Vector2 screenSize = {1200,800};
+  std::unordered_map<idT, PlayerDescription> players{};
+  idT thisPlayerID{0};
+  PlayerDescription descPlayer{};
+  bool bWaitingForConnection{true};
+  
+  bool lookChangeMenu{false};
+  bool mainMenu{false};
+  PlayerDescription::PlayerLookDesc tempLook{};
+  
+
 public:
   Game(std::string& ip, uint16_t port)
+  : mainCamera(screenSize/2.f, {0,0}, 0.f, 1.0f)
   {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     SetConfigFlags(FLAG_VSYNC_HINT);
     InitWindow(screenSize.x, screenSize.y, "Game");
     SetTargetFPS(60);
     
-    mainCamera = {0};
-    mainCamera.offset = screenSize/2.f;
-    mainCamera.target = {0,0};
-    mainCamera.rotation = 0.f;
-    mainCamera.zoom = 1.0f;
-
-    // Gui related
-    GuiLoadStyleCyber();
 
     // Game logic related
     while(!UserCreate(ip, port))
@@ -54,18 +59,8 @@ public:
   }
 
 private:
-  Camera2D mainCamera;
-  
-  std::unordered_map<idT, PlayerDescription> players;
-  idT thisPlayerID = 0;
-  PlayerDescription descPlayer;
-  bool bWaitingForConnection = true;
-  
-  bool lookChangeMenu = false;
-  bool mainMenu = false;
-  PlayerDescription::PlayerLookDesc tempLook;
 
-  Vector2 inline ClosestPointLine(const Vector2 l1, const Vector2 l2, const Vector2 p)
+  Vector2 inline ClosestPointLine(const raylib::Vector2 l1, const raylib::Vector2 l2, const raylib::Vector2 p)
   {
     if(l1==l2) return l1;
     
@@ -108,18 +103,17 @@ private:
     // Check for incoming messages
     if(IsConnected())
     {
-      while(!Incoming().is_empty())
+      while(auto msg = NextMessage())
       {
-        auto msg = Incoming().pop_front().msg;
 
-        switch(msg.header.id)
+        switch(msg->GetType())
         {
           // We have been accepted as a client
           // we can't yet interact though
           case GameMsg::Client_Accepted:
           {
               std::cout << "Server Accepted you!" << std::endl;
-              message msgSend;
+              Message msgSend;
               msgSend.header.id = GameMsg::Client_RegisterWithServer;
 
               descPlayer = PlayerDescription({GetRenderWidth()/2.f, GetRenderHeight()/2.f});
@@ -131,7 +125,7 @@ private:
           // Server assigned an ClientID for us
           case GameMsg::Client_AssignID:
           {
-              msg >> thisPlayerID;
+              *msg >> thisPlayerID;
               std::cout << "Server provided your id: " << thisPlayerID << std::endl;
           }
           break;
@@ -139,7 +133,7 @@ private:
           case GameMsg::Game_AddPlayer:
           {
             PlayerDescription desc;
-            msg >> desc;
+            *msg >> desc;
             players[desc.uUniqueID] = desc; 
 
             std::cout << "Server added player: " << desc.uUniqueID << std::endl;
@@ -155,7 +149,7 @@ private:
           case GameMsg::Game_RemovePlayer:
           {
             idT removeId;
-            msg >> removeId;
+            *msg >> removeId;
             players.erase(removeId);              
           }
           break;
@@ -164,7 +158,7 @@ private:
           {
             idT id;
             PlayerDescription::PlayerPhysDesc physDesc;
-            msg >> physDesc >> id;
+            *msg >> physDesc >> id;
             
             // desc.vel = players[desc.uUniqueID].vel;
             players[id].phys = physDesc;
@@ -179,33 +173,27 @@ private:
             // PlayerDescription::PlayerLookDesc newLook;
             idT id;
             PlayerDescription::PlayerLookDesc newLook;
-            msg >> newLook >> id;
+            *msg >> newLook >> id;
             players[id].look = newLook;              
           }
           break;
-          // break;
-          // case GameMsg::Client_Accepted:
-          // {
-              
-          // }
-          // break;
           default:
           break;
         }
       }
     }
 
-    const Vector2 screenCenter = {GetRenderWidth()/2.f, GetRenderHeight()/2.f};
+    const raylib::Vector2 screenCenter = {GetRenderWidth()/2.f, GetRenderHeight()/2.f};
     
     if(bWaitingForConnection)
        return;
     
     auto& playerPhys = players[thisPlayerID].phys;
 
-    Vector2 mouseDir = Vector2Normalize(GetMousePosition() - screenCenter);
+    raylib::Vector2 mouseDir = (raylib::Mouse::GetPosition() - screenCenter).Normalize();
     playerPhys.handsDir = mouseDir;
     
-    Vector2 delta_v = {0,0};
+    raylib::Vector2 delta_v = {0,0};
     
     if(IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
       delta_v += Vector2{0,-1};
@@ -226,12 +214,12 @@ private:
       }
       lookChangeMenu = !lookChangeMenu;
     }
-    delta_v = Vector2Normalize(delta_v) * playerPhys.acc * deltaTime;
+    delta_v = delta_v.Normalize() * playerPhys.acc * deltaTime;
       
     playerPhys.Update(deltaTime, delta_v);
 
     // Send myPlayer data to server
-    message msg{};
+    Message msg{};
     msg.header.id = GameMsg::Game_UpdatePlayer;
     msg << thisPlayerID << players[thisPlayerID].phys;
     Send(msg);
@@ -272,13 +260,10 @@ private:
   void DrawScreen()
   {
     const int FONT_SIZE = 20;
-    const Vector2 screenCenter = {GetRenderWidth()/2.f, GetRenderHeight()/2.f};
+    const raylib::Vector2 screenCenter = {GetRenderWidth()/2.f, GetRenderHeight()/2.f};
 
     if(mainMenu)
-    {
-
-      
-      
+    {      
       return;
     }
     
@@ -297,12 +282,8 @@ private:
     if(lookChangeMenu)
     {
       ClearBackground(GRAY);
-      
-      GuiColorPicker({100,100,100,100}, "Body color", &tempLook.color);
-      GuiColorPicker({100,220,100,100}, "Left hand color", &tempLook.left_hand_color);
-      GuiColorPicker({100,340,100,100}, "Right hand color", &tempLook.right_hand_color);
-      
-      Vector2 mouseDir = Vector2Normalize(GetMousePosition() - screenCenter);
+            
+      raylib::Vector2 mouseDir = (raylib::Mouse::GetPosition() - screenCenter).Normalize();
 
       const int SCALE = GetRenderWidth() * 5 / screenSize.x;
       const float radius = PlayerDescription::PlayerPhysDesc::radius * SCALE;
@@ -313,9 +294,14 @@ private:
       DrawLineEx(screenCenter+tempLook.left_hand_pos * SCALE, screenCenter+(tempLook.left_hand_pos+mouseDir*tempLook.hand_length) * SCALE, tempLook.hand_width * SCALE, tempLook.left_hand_color);
       DrawLineEx(screenCenter+tempLook.right_hand_pos * SCALE, screenCenter+(tempLook.right_hand_pos+mouseDir*tempLook.hand_length) * SCALE, tempLook.hand_width * SCALE, tempLook.right_hand_color);
       
-      const char* label = TextFormat("ID: %d",thisPlayerID);
-      const Vector2 labelSize = MeasureTextEx(GetFontDefault(), label, FONT_SIZE * SCALE, 2);
-      DrawTextEx(GetFontDefault(), label, screenCenter + Vector2{-labelSize.x/2.f,- radius - labelSize.y}, FONT_SIZE * SCALE, 2, BLACK);
+      const raylib::Text label(
+          TextFormat("ID: %d",thisPlayerID), 
+          FONT_SIZE*SCALE, 
+          BLACK, 
+          GetFontDefault(),
+          2
+      );
+      label.Draw(screenCenter + raylib::Vector2{-label.MeasureEx().x/2.f,- radius - label.MeasureEx().y});
       
       
       if(GuiButton({screenCenter.x, GetScreenHeight() - 40.f, 100,50}, "Save"))
@@ -323,7 +309,7 @@ private:
         // save tempLook to accual player
         players[thisPlayerID].look = tempLook;
         // Send new look to server
-        message changeLook;
+        Message changeLook{};
         changeLook.header.id = GameMsg::Game_UpdatePlayerLook;
         changeLook << thisPlayerID << players[thisPlayerID].look;
         Send(changeLook);
@@ -345,12 +331,6 @@ private:
 
     // grid with be moving 
     draw_grid_background();
-
-    // DrawRectangle(-WORLD_SIZE, -WORLD_SIZE, WORLD_SIZE, WORLD_SIZE*3, BLACK);
-    // DrawRectangle(WORLD_SIZE, -WORLD_SIZE, WORLD_SIZE, WORLD_SIZE*3, BLACK);
-    
-    // DrawRectangle(0, -WORLD_SIZE, WORLD_SIZE, WORLD_SIZE, BLACK);
-    // DrawRectangle(0, WORLD_SIZE, WORLD_SIZE, WORLD_SIZE, BLACK);
     
     for(auto& object : players)
     {
@@ -362,7 +342,7 @@ private:
       DrawCircleV(p.phys.pos, p.phys.radius, p.look.color);
       
       // DrawVelocityIndicator
-      DrawLineV(p.phys.pos, p.phys.pos+Vector2Normalize(p.phys.vel)*p.phys.radius, RED);
+      DrawLineV(p.phys.pos, p.phys.pos+p.phys.vel.Normalize()*p.phys.radius, RED);
       
       // DrawPlayer Hands
       DrawLineEx(p.phys.pos+p.look.left_hand_pos, p.phys.pos+p.look.left_hand_pos+p.phys.handsDir*p.look.hand_length, p.look.hand_width, p.look.left_hand_color);
@@ -372,8 +352,6 @@ private:
       const Vector2 labelSize = MeasureTextEx(GetFontDefault(), label, FONT_SIZE, 2);
       DrawTextEx(GetFontDefault(), label, p.phys.pos + Vector2{-labelSize.x/2.f,- p.phys.radius - labelSize.y}, FONT_SIZE, 2, BLACK);
       
-      // If player is on the edge, then draw it once again on the other edge
-      // if()      
     }
     EndMode2D();
     
@@ -395,7 +373,7 @@ public:
   }
 };
 
-int main(int argc, char* argv[]) // first argument is the program itself
+int main(int argc, char* argv[])
 {
   
   std::string ip_addr = "127.0.0.1";

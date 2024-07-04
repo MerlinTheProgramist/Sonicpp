@@ -1,19 +1,25 @@
 #include <unordered_map>
 #include <iostream>
 
-#include "library/server.h"
-#include "multiplayer_common.h"
+#include "../library/server.h"
+#include "multiplayer_common.hpp"
 
 
-class GameServer : public net_frame::server_interface<GameMsg>
+class GameServer : public net_frame::ServerInterface<GameMsg>
 {
 public:
-  GameServer(uint16_t port):net_frame::server_interface<GameMsg>(port)
+  GameServer(uint16_t port):net_frame::ServerInterface<GameMsg>(port)
   {
+    Start();
+
+    while(1)
+    {
+      Update(-1, true);
+    }
     
   }  
 
-  std::unordered_map<uint32_t, PlayerDescription> playerRoster;
+  std::unordered_map<uint32_t, PlayerDescription> clientRoster;
   std::vector<uint32_t> GarbageIDs;
   
 protected:
@@ -27,7 +33,7 @@ protected:
   override
   {
     // Send a custom message that tells the client he, can now communicate
-    message msg;
+    Message msg;
     msg.header.id = GameMsg::Client_Accepted;
     client->Send(msg);
   }
@@ -37,22 +43,22 @@ protected:
   {
     if(client)
     {
-      if(playerRoster.find(client->GetID()) == playerRoster.end())
+      if(clientRoster.find(client->GetID()) == clientRoster.end())
       {
         // Client never has been added to game
         
       }
       else
       {
-        auto& pd = playerRoster[client->GetID()];
+        auto& pd = clientRoster[client->GetID()];
         std::cout << "[UNGRECEFULL REMOVAL]: " << pd.uUniqueID << std::endl;
-        playerRoster.erase(client->GetID());
+        clientRoster.erase(client->GetID());
         GarbageIDs.push_back(client->GetID());
       }
     }
   }
 
-  void OnMessage(std::shared_ptr<Connection> client, message &msg) 
+  void OnMessage(std::shared_ptr<Connection> client, Message& msg) 
   override
   {
     // If there are some clients that had disconnected
@@ -61,7 +67,7 @@ protected:
     {
       for(auto pid : GarbageIDs)
       {
-        message m;
+        Message m;
         m.header.id = GameMsg::Game_RemovePlayer;
         m << pid;
         std:: cout << "Removing: " << pid << std::endl;
@@ -70,7 +76,7 @@ protected:
       GarbageIDs.clear();        
     }
     
-    switch(msg.header.id)
+    switch(msg.GetType())
     {
       case GameMsg::Client_RegisterWithServer:
       {
@@ -79,28 +85,28 @@ protected:
           {
           msg >> desc;
           desc.uUniqueID = client->GetID();
-          playerRoster[desc.uUniqueID] = desc;
+          clientRoster[desc.uUniqueID] = desc;
           }
           
           // Now send to playar its ID
           {
-          message msgSendID;
+          Message msgSendID;
           msgSendID.header.id = GameMsg::Client_AssignID;
           msgSendID << desc.uUniqueID;
           MessageClient(client, msgSendID);
           }
           {
           // Inform players that a new player has joined
-          message msgAddPlayer;
+          Message msgAddPlayer;
           msgAddPlayer.header.id = GameMsg::Game_AddPlayer;
           msgAddPlayer << desc;
           MessageAllClients(msgAddPlayer, client);
           }
 
           // send all other client informations to the client that just joined
-          for(const auto& player : playerRoster)
+          for(const auto& player : clientRoster)
           {
-            message msgAddOtherPlayers{};
+            Message msgAddOtherPlayers{};
             msgAddOtherPlayers.header.id = GameMsg::Game_AddPlayer;
             msgAddOtherPlayers << player.second;
             MessageClient(client, msgAddOtherPlayers);
@@ -154,11 +160,5 @@ int main(int argc, char* argv[])
 
   
   GameServer server(port);
-  server.Start();
-
-  while(1)
-  {
-    server.Update(-1, true);
-  }
   return 0;
 }

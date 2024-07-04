@@ -12,19 +12,20 @@
 namespace net_frame{
 
   template<typename T>
-  class server_interface
+  class ServerInterface
   {
+  protected:
+    using Message = net_frame::Message<T>;
+    using Connection = net_frame::Connection<T>;
   public:
-    using message = net_frame::message<T>;
-    using Connection = net_frame::connection<T>;
     
-    server_interface(uint16_t port)
+    ServerInterface(uint16_t port)
       : m_asioAcceptor(m_asioContext, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
     {
       
     }
 
-    virtual ~server_interface()
+    virtual ~ServerInterface()
     {
       Stop();
     }
@@ -68,9 +69,9 @@ namespace net_frame{
           {
             std::cerr << "[SERVER] New Connection: " << socket.remote_endpoint() << std::endl;
 
-            std::shared_ptr<connection<T>> newconn = 
-              std::make_shared<connection<T>>(
-                connection<T>::owner::server, 
+            std::shared_ptr<Connection> newconn = 
+              std::make_shared<Connection>(
+                Connection::Owner::Server, 
                 m_asioContext, 
                 std::move(socket), 
                 m_qMessagesIn
@@ -100,7 +101,7 @@ namespace net_frame{
       });
     }
 
-    void MessageClient(std::shared_ptr<connection<T>> client, const message& msg)
+    void MessageClient(std::shared_ptr<Connection> client, const Message& msg)
     {
       if(client && client->IsConnected())
       {
@@ -117,7 +118,7 @@ namespace net_frame{
       }
     }
     
-    void MessageAllClients(const message& msg, std::shared_ptr<connection<T>> pIgnoreClient = nullptr)
+    void MessageAllClients(const Message& msg, std::shared_ptr<Connection> pIgnoreClient = nullptr)
     {
       // Flag to indicate that some clients died, to remove them all at once from the collection
       bool bInvalidClientExits = false;
@@ -165,17 +166,17 @@ namespace net_frame{
   // Functions that could be obertitten by the derrived class
   protected:
     // Called when a new client connects 
-    virtual bool OnClientConnect(std::shared_ptr<connection<T>> client)
+    virtual bool OnClientConnect(std::shared_ptr<Connection> client)
     {return false;}
     // Called when a client disconnects
-    virtual void OnClientDisconnect(std::shared_ptr<connection<T>> client)
+    virtual void OnClientDisconnect(std::shared_ptr<Connection> client)
     {}
     // Called when a message arrives
-    virtual void OnMessage(std::shared_ptr<connection<T>> client, message& msg)
+    virtual void OnMessage(std::shared_ptr<Connection> client, Message& msg)
     {}
   public: 
     // 
-    virtual void OnClientValidated(std::shared_ptr<connection<T>> client)
+    virtual void OnClientValidated(std::shared_ptr<Connection> client)
     {}
 
   protected:
@@ -183,7 +184,7 @@ namespace net_frame{
     tsqueue<owned_message<T>> m_qMessagesIn;
 
     // Container of active validated connections
-    std::deque<std::shared_ptr<connection<T>>> m_deqConnections;
+    std::deque<std::shared_ptr<Connection>> m_deqConnections;
     
     asio::io_context m_asioContext;
     std::thread m_threadContext;
