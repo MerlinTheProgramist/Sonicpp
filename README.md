@@ -1,7 +1,7 @@
 A simple UDP networking library for multiplayer games.
 
 # Features
-- Simple class based interface allows 
+- Simple virtual class based interface makes it easy to implement specific behaviour for important events
 - Built-in client verification system 
 - Messages are marked with user defined enumerable type
 - Capability to send any type of flat data data structure, std::string or std::vector
