@@ -1,6 +1,8 @@
-A simple UDP networking library for multiplayer games.
+# Soonic++
+Simple Object Oriented Networking In C++ 
+Lightwaight header-only TCP networking library for multiplayer games in c++17
 
-# Features
+## Features
 - Simple virtual class based interface makes it easy to implement specific behaviour for important events
 - Built-in client verification system 
 - Messages are marked with user defined enumerable type
@@ -8,12 +10,12 @@ A simple UDP networking library for multiplayer games.
 - mutlithreaded server
 - Server can be launched along a Client, making it the host
 
-# Check out examples
+## Check out examples
 2 of the provided examples require [raylib](https://www.raylib.com) and [raylib-cpp](https://github.com/RobLoach/raylib-cpp) to be compiled   
 build with `make` (provided Makefile in root) 
 
 
-# Getting Started
+## Getting Started
 1. Decide what types of data you will be sending
 ```cpp
 // common.h
