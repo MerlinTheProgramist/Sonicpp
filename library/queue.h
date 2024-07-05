@@ -6,7 +6,7 @@
 #include <thread>
 
 
-namespace net_frame
+namespace sonicpp
 {
 
   template<typename T>

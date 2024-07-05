@@ -9,7 +9,7 @@
 #include <type_traits>
 
 
-namespace net_frame
+namespace sonicpp
 {
   template <typename T>
   struct message_header

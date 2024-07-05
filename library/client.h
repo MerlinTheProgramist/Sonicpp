@@ -11,14 +11,14 @@
 #include <asio.hpp>
 #include <optional>
 
-namespace net_frame{
+namespace sonicpp{
 
   template<typename T>
   class ClientIntefrace
   {
   protected:
     // specific Message alias
-    using Message = net_frame::Message<T>;
+    using Message = sonicpp::Message<T>;
 
     // context for handling data transfer
     asio::io_context m_context;

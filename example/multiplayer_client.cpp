@@ -18,7 +18,7 @@
 using namespace std::chrono_literals;
 
 
-class Game : public net_frame::ClientIntefrace<GameMsg>
+class Game : public sonicpp::ClientIntefrace<GameMsg>
 {
 private:
   const raylib::Vector2 screenSize{1200,800};

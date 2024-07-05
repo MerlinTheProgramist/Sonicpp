@@ -1,8 +1,6 @@
 #include <chrono>
-#include <ratio>
 
 #include <cstdint>
-#include <cstdio>
 #include <iostream>
 #include <thread>
 #include <unistd.h>
@@ -17,7 +15,7 @@ enum class MessageType : uint32_t
   ServerMessage
 };
 
-class SampleClient final : public net_frame::ClientIntefrace<MessageType>
+class SampleClient final : public sonicpp::ClientIntefrace<MessageType>
 {
 public:
   SampleClient(){
@@ -70,7 +68,7 @@ public:
 public:
   void PingServer()
   {
-    net_frame::message<MessageType> msg;
+    sonicpp::Message<MessageType> msg;
     msg.header.id = MessageType::ServerPing;
 
     std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();

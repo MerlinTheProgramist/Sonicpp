@@ -5,10 +5,10 @@
 #include "multiplayer_common.hpp"
 
 
-class GameServer : public net_frame::ServerInterface<GameMsg>
+class GameServer : public sonicpp::ServerInterface<GameMsg>
 {
 public:
-  GameServer(uint16_t port):net_frame::ServerInterface<GameMsg>(port)
+  GameServer(uint16_t port):sonicpp::ServerInterface<GameMsg>(port)
   {
     Start();
 

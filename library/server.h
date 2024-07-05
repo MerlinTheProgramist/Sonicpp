@@ -9,14 +9,14 @@
 #include <memory>
 #include <system_error>
 
-namespace net_frame{
+namespace sonicpp{
 
   template<typename T>
   class ServerInterface
   {
   protected:
-    using Message = net_frame::Message<T>;
-    using Connection = net_frame::Connection<T>;
+    using Message = sonicpp::Message<T>;
+    using Connection = sonicpp::Connection<T>;
   public:
     
     ServerInterface(uint16_t port)

@@ -11,7 +11,7 @@
 
 #define DEBUG
 
-namespace net_frame{
+namespace sonicpp{
 
   // Forward declare
   template<typename T>
@@ -34,7 +34,7 @@ namespace net_frame{
     uint32_t GetID() const {return id;}
     
   public:
-    void ConnectToClient(net_frame::ServerInterface<T>* server, uint32_t uid = 0);
+    void ConnectToClient(sonicpp::ServerInterface<T>* server, uint32_t uid = 0);
     void ConnectToServer(const asio::ip::tcp::resolver::results_type& endpoints);
     void Disconnect();
     bool IsConnected() const;
@@ -151,7 +151,7 @@ namespace net_frame{
   }
 
     template<typename T>
-    void Connection<T>::ConnectToClient(net_frame::ServerInterface<T>* server, uint32_t uid)
+    void Connection<T>::ConnectToClient(sonicpp::ServerInterface<T>* server, uint32_t uid)
     {
       if(m_nOwnerType == Owner::Server)
       {

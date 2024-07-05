@@ -11,21 +11,21 @@ enum class MessageType : uint32_t
   ServerMessage
 };
 
-class SampleServer final : public net_frame::server_interface<MessageType>
+class SampleServer final : public sonicpp::ServerInterface<MessageType>
 {
 public:
-  SampleServer(uint16_t nPort) : net_frame::server_interface<MessageType>(nPort)
+  SampleServer(uint16_t nPort) : sonicpp::ServerInterface<MessageType>(nPort)
   {
   }
 
 protected:
-  bool OnClientConnect(std::shared_ptr<net_frame::connection<MessageType>> client)
+  bool OnClientConnect(std::shared_ptr<sonicpp::Connection<MessageType>> client)
   override
   {
     return true;
   }
 
-  void OnMessage(std::shared_ptr<net_frame::connection<MessageType>> client, net_frame::message<MessageType>& msg)
+  void OnMessage(std::shared_ptr<sonicpp::Connection<MessageType>> client, sonicpp::Message<MessageType>& msg)
   override
   {
     
