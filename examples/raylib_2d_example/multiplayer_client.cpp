@@ -10,8 +10,8 @@
 #include <raylib-cpp.hpp>
 #include "raygui.h"
 
-#include "../library/client.h"
-#include "../library/message.h"
+#include "../../library/client.h"
+#include "../../library/message.h"
 #include "multiplayer_common.hpp"
 
 

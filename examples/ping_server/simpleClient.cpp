@@ -4,7 +4,7 @@
 #include <iostream>
 #include <thread>
 #include <unistd.h>
-#include "../library/client.h"
+#include "../../library/client.h"
 
 enum class MessageType : uint32_t
 {
