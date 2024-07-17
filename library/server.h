@@ -17,8 +17,8 @@ namespace sonicpp{
   protected:
     using Message = sonicpp::Message<T>;
     using Connection = sonicpp::Connection<T>;
-  public:
-    
+  
+  public:    
     ServerInterface(uint16_t port)
       : m_asioAcceptor(m_asioContext, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
     {
@@ -101,6 +101,26 @@ namespace sonicpp{
       });
     }
 
+    void KickClient(std::shared_ptr<Connection> client)
+    {
+        std::cout << "[" << client->GetID() << "] Disconnected" << std::endl;
+        OnClientDisconnect(client);
+        client.reset();
+        
+        m_deqConnections.erase(
+          std::remove(m_deqConnections.begin(), m_deqConnections.end(), nullptr), m_deqConnections.end());
+    }
+      
+    void MessageClient(uint32_t client_id, const Message& msg){
+      for(auto& client : m_deqConnections)
+      {
+        if(!client || !client->IsConnected())
+          KickClient(client);
+        else if(client->GetId()==client_id)
+          MessageClient(client, msg);
+      }
+    }
+    
     void MessageClient(std::shared_ptr<Connection> client, const Message& msg)
     {
       if(client && client->IsConnected())
@@ -108,14 +128,7 @@ namespace sonicpp{
         client->Send(msg);
       }
       else
-      {
-        std::cout << "[" << client->GetID() << "] Disconnected" << std::endl;
-        OnClientDisconnect(client);
-        client.reset();
-        
-        m_deqConnections.erase(
-          std::remove(m_deqConnections.begin(), m_deqConnections.end(), nullptr), m_deqConnections.end());
-      }
+        KickClient(client);
     }
     
     void MessageAllClients(const Message& msg, std::shared_ptr<Connection> pIgnoreClient = nullptr)
@@ -133,11 +146,7 @@ namespace sonicpp{
         }
         else
         {
-          std::cout << "[" << client->GetID() << "] Disconnected" << std::endl;
-          // The client couldnt be contacted, so it has disconnected
-          OnClientDisconnect(client);
-          client.reset();
-          bInvalidClientExits = true;
+          KickClient(client);
         }
       }
 
@@ -156,8 +165,14 @@ namespace sonicpp{
         // Grab the front message
         owned_message<T> msg = m_qMessagesIn.pop_front();
 
+          
         // Pass to message handler
         OnMessage(msg.remote, msg.msg);
+
+        if(!msg.remote || !msg.remote->IsConnected()){
+          KickClient(msg.remote);
+          continue;
+        }
         
         nMessageCount++;
       }

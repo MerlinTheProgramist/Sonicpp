@@ -20,6 +20,7 @@ namespace sonicpp{
     // specific Message alias
     using Message = sonicpp::Message<T>;
 
+  private:
     // context for handling data transfer
     asio::io_context m_context;
     // thread for the context to execute in separately from other stuff
@@ -28,7 +29,6 @@ namespace sonicpp{
     asio::ip::tcp::socket m_socket;
     // instance of connection object, whitch handles data trasfer
     std::unique_ptr<Connection<T>> m_connection;
-  private:
     // This is the thread safe queue of incoming messages from the server
     tsqueue<owned_message<T>> m_qMessagesIn;
     

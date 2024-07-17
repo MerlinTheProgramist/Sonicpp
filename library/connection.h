@@ -42,7 +42,7 @@ namespace sonicpp{
     
   private:
     // @ASYNC - Prime context ready to read a message header
-    void ReadHeader();
+    bool ReadHeader();
     // @ASYNC
     void ReadBody();
     // @ASYNC
@@ -54,7 +54,6 @@ namespace sonicpp{
     uint64_t scramble(uint64_t nInput);
     void WriteValidation();
     void ReadValidation(ServerInterface<T>* server = nullptr);
-
     
   protected:
     // Each connection has a unique socket to a remote 
@@ -74,7 +73,7 @@ namespace sonicpp{
     tsqueue<owned_message<T>>& m_qMessagesIn;
     Message<T> m_msgTemporaryIn;
     // The owner decides how some of hte connection behaves
-    Owner m_nOwnerType = Owner::Server;
+    const Owner m_nOwnerType = Owner::Server;
     uint32_t id = 0;
 
     // Handshake validation
@@ -126,12 +125,13 @@ namespace sonicpp{
               server->OnClientValidated(this->shared_from_this());
 
               // now prime the Read
-              ReadHeader();
+              if(!ReadHeader())
+                server->KickClient(this->shared_from_this());
             }
             else
             {
               std::cout << "Client Disconnected (Fail Validation)" << std::endl;
-              m_socket.close();
+              server->KickClient(this->shared_from_this());
             }
           }
           else // if client
@@ -166,6 +166,7 @@ namespace sonicpp{
         }
         else
           std::cerr << "[SERVER] Couldn't connect to client" << std::endl;
+        
       }
     }
     template<typename T>
@@ -224,10 +225,11 @@ namespace sonicpp{
       );  
     }
     template<typename T>
-    void Connection<T>::ReadHeader()
+    bool Connection<T>::ReadHeader()
     {
+      bool success{true};
       asio::async_read(m_socket, asio::buffer(&m_msgTemporaryIn.header, sizeof(message_header<T>)),
-        [this](std::error_code ec, std::size_t length)
+        [this, &success](std::error_code ec, std::size_t length)
         {
           if(!ec)
           {
@@ -245,10 +247,11 @@ namespace sonicpp{
           else
           {
             std::cout << "[" << id << "] Read Header Fail." << std::endl;
-            m_socket.close();
+            Disconnect();
+            success = false;
           }
         });
-    
+      return success;
     }
     template<typename T>
     void Connection<T>::ReadBody()
@@ -267,7 +270,6 @@ namespace sonicpp{
             m_socket.close();
           }
         });
-      
     }
 
     
