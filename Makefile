@@ -6,17 +6,25 @@ OBJDIR = objects/
 LIBSRC  := $(wildcard library/*.h)
 LIBOBJS  := $(LIBSRC:library/%.h=objects/%.o)
 
-CFLAGS = -lraylib -O3 -std=c++17 -Wall -Wextra -Wfloat-equal -Wundef -Wshadow=compatible-local -Wpointer-arith -Winit-self
+CFLAGS = -lraylib -O3 -std=c++20 -fext-numeric-literals -Wall -Wextra -Wfloat-equal -Wundef -Wshadow=compatible-local -Wpointer-arith -Winit-self
 	
 PHONY: example all
 
-all: example
-example: example-client example-server
-	
-example-client: # $(INCL)lib-net.o
-	$(CC) $(CFLAGS) -o $(BINDIR)example-client  example/multiplayer_client.cpp 	
-example-server: # $(INCL)lib-net.o
-	$(CC) $(CFLAGS) -o $(BINDIR)example-server example/multiplayer_server.cpp 
+all: examples
+examples: example-ping example-raylib example-tictactoe
+
+
+example-ping:
+	@$(CC) $(CFLAGS) -o $(BINDIR)$@-client examples/ping_server/simpleClient.cpp 	
+	@$(CC) $(CFLAGS) -o $(BINDIR)$@-server examples/ping_server/sampleServer.cpp 	
+
+example-tictactoe:
+	@$(CC) $(CFLAGS) -o $(BINDIR)$@-client examples/tic_tac_toe/client.cpp 	
+	@$(CC) $(CFLAGS) -o $(BINDIR)$@-server examples/tic_tac_toe/server.cpp 	
+
+example-raylib:
+	@$(CC) $(CFLAGS) -o $(BINDIR)$@-client examples/raylib_2d_example/multiplayer_client.cpp 	
+	@$(CC) $(CFLAGS) -o $(BINDIR)$@-server examples/raylib_2d_example/multiplayer_server.cpp 
 
 
 # $(LIBOBJS): $(OBJDIR)%.o : library/%.h

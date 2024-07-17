@@ -15,6 +15,8 @@ enum class MessageType : uint32_t
   ServerMessage
 };
 
+using namespace std::literals;
+
 class SampleClient final : public sonicpp::ClientIntefrace<MessageType>
 {
 public:
