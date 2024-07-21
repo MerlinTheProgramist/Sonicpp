@@ -3,7 +3,6 @@
 #include "queue.h"
 #include "connection.h"
 #include "message.h"
-#include "server.h"
 
 #include <asio/ip/address.hpp>
 #include <memory>
@@ -104,6 +103,11 @@ namespace sonicpp{
         return false; 
     }
 
+    Message AwaitNextMessage(){
+      m_qMessagesIn.wait();
+      return m_qMessagesIn.pop_front().msg;
+    }
+    
     std::optional<Message> NextMessage()
     {
       return (m_qMessagesIn.is_empty())?

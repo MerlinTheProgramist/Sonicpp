@@ -20,13 +20,12 @@ public:
     {
       if(IsConnected())
       {
-        while(auto msg = NextMessage())
-        {
-          switch(msg->header.id)
+        auto msg = AwaitNextMessage();
+          switch(msg.GetType())
           {
             case MessageType::ServerAccept:
             {
-              *msg >> my_symbol;
+              msg >> my_symbol;
               if(my_symbol=='o')
                 my_round=true;
             } 
@@ -36,15 +35,17 @@ public:
               Move move;
               char symbol;
               char round;
-              *msg >> round >> symbol >> move;
+              msg >> round >> symbol >> move;
               board.apply_move(move, symbol);
+
+              render(); // render immidietly
 
               my_round = (round==my_symbol);
             }
             break;
             case MessageType::GameEnd:{
               char winner;
-              *msg >> winner;
+              msg >> winner;
               if(winner==my_symbol)
                 std::cout << "YOU WON!!!" << std::endl;
               else
@@ -55,12 +56,11 @@ public:
             }
             break;
           }
-        }
       }
       else
       {
         std::cout << "Server Down!" << std::endl;
-        loop = false;
+        exit(1);
       }
 
       if(my_symbol==0 || !my_round)

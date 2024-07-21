@@ -1,5 +1,6 @@
 #pragma once
 
+#include "client.h"
 #include "message.h"
 #include "queue.h"
 #include "server.h"
@@ -16,10 +17,15 @@ namespace sonicpp{
   // Forward declare
   template<typename T>
   class ServerInterface;
+  template<typename T>
+  class ClientIntefrace;
   
   template<typename T>
   class Connection : public std::enable_shared_from_this<Connection<T>>
   {
+    friend ServerInterface<T>;
+    friend ClientIntefrace<T>;
+
   public:
     enum class Owner
     {
@@ -33,7 +39,7 @@ namespace sonicpp{
 
     uint32_t GetID() const {return id;}
     
-  public:
+  private:
     void ConnectToClient(sonicpp::ServerInterface<T>* server, uint32_t uid = 0);
     void ConnectToServer(const asio::ip::tcp::resolver::results_type& endpoints);
     void Disconnect();
