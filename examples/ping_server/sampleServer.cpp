@@ -19,13 +19,13 @@ public:
   }
 
 protected:
-  bool OnClientConnect(std::shared_ptr<sonicpp::Connection<MessageType>> client)
+  bool OnClientConnect(std::shared_ptr<Connection> client)
   override
   {
     return true;
   }
 
-  void OnMessage(std::shared_ptr<sonicpp::Connection<MessageType>> client, sonicpp::Message<MessageType>& msg)
+  void OnMessage(std::shared_ptr<Connection> client, Message& msg)
   override
   {
     
@@ -36,7 +36,7 @@ protected:
         std::chrono::system_clock::time_point timeThen;        
 
         // Bounce message back
-        client->Send(msg);          
+        MessageClient(client, msg); 
       }
       break;
       default:

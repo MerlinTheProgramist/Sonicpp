@@ -38,7 +38,6 @@ public:
               char round;
               *msg >> round >> symbol >> move;
               board.apply_move(move, symbol);
-              render();
 
               my_round = (round==my_symbol);
             }
@@ -69,6 +68,7 @@ public:
 
       Move m{};
       do{
+        render();
         m = get_move();
       }while(!board.check_valid_move(m));
       my_round = false;

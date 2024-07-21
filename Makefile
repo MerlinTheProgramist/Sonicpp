@@ -4,9 +4,9 @@ CC = g++
 INCL = include/
 OBJDIR = objects/
 LIBSRC  := $(wildcard library/*.h)
-LIBOBJS  := $(LIBSRC:library/%.h=objects/%.o)
+LIBOBJS := $(LIBSRC:library/%.h=objects/%.o)
 
-CFLAGS = -lraylib -O3 -std=c++20 -fext-numeric-literals -Wall -Wextra -Wfloat-equal -Wundef -Wshadow=compatible-local -Wpointer-arith -Winit-self
+CFLAGS = -ggdb -std=c++20 -fext-numeric-literals -Wall -Wextra -Wfloat-equal -Wundef -Wshadow=compatible-local -Wpointer-arith -Winit-self
 	
 PHONY: example all
 
@@ -23,8 +23,8 @@ example-tictactoe:
 	@$(CC) $(CFLAGS) -o $(BINDIR)$@-server examples/tic_tac_toe/server.cpp 	
 
 example-raylib:
-	@$(CC) $(CFLAGS) -o $(BINDIR)$@-client examples/raylib_2d_example/multiplayer_client.cpp 	
-	@$(CC) $(CFLAGS) -o $(BINDIR)$@-server examples/raylib_2d_example/multiplayer_server.cpp 
+	@$(CC) $(CFLAGS) -lraylib -o $(BINDIR)$@-client examples/raylib_2d_example/multiplayer_client.cpp 	
+	@$(CC) $(CFLAGS) -lraylib -o $(BINDIR)$@-server examples/raylib_2d_example/multiplayer_server.cpp 
 
 
 # $(LIBOBJS): $(OBJDIR)%.o : library/%.h

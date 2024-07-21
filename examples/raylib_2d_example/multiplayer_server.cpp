@@ -35,7 +35,7 @@ protected:
     // Send a custom message that tells the client he, can now communicate
     Message msg;
     msg.header.id = GameMsg::Client_Accepted;
-    client->Send(msg);
+    MessageClient(client,msg);
   }
 
   void OnClientDisconnect(std::shared_ptr<Connection> client) 

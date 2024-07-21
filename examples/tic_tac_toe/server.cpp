@@ -7,6 +7,7 @@
 #include <random>
 
 
+
 class SampleServer final : public sonicpp::ServerInterface<MessageType>
 {
   const std::vector<char> symbols{'o', 'x'};
@@ -34,7 +35,9 @@ protected:
     symbols_left.push_back(players[client->GetID()]);
     players.erase(client->GetID());
 
-    std::cout << "[SERVER] " << players.size() << "/2 players in" << std::endl;
+    std::cout << "[SERVER] Player ["<< client->GetID() << "] quit, " << players.size() << "/2 players left" << std::endl;
+    started = false;
+    new (&board) Board();
   }
   
   void OnClientValidated(std::shared_ptr<sonicpp::Connection<MessageType>> client)
@@ -56,7 +59,7 @@ protected:
       for(auto& client : m_deqConnections){
         Message msg{MessageType::ServerAccept};
         msg << players[client->GetID()];
-        client->Send(msg);
+        MessageClient(client, msg);
       }
       started = true;
     }
@@ -64,8 +67,7 @@ protected:
 
   void OnMessage(std::shared_ptr<sonicpp::Connection<MessageType>> client, sonicpp::Message<MessageType>& msg)
   override
-  {
-    
+  {    
     switch(msg.header.id)
     {
       case MessageType::Move:
@@ -108,6 +110,7 @@ protected:
     }
   }
 };
+
 
 int main()
 {

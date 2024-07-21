@@ -81,19 +81,8 @@ public:
   }
 };
 
-static std::string getKey()
-{    
-    std::string answer;
-    std::cin >> answer;
-    return answer;
-}
-
-
 using namespace std::chrono_literals;
 int main()
 {
   SampleClient c{};
-  
-  return 0;
-  
 }
