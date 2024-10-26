@@ -27,6 +27,14 @@ example-raylib:
 	@$(CC) $(CFLAGS) -lraylib -o $(BINDIR)$@-server examples/raylib_2d_example/multiplayer_server.cpp 
 
 
+tests/unit_tests: $(LIBSRC) ./tests/unit_tests.cpp
+	@cd tests/ && \
+	$(CC) $(CFLAGS) -lgtest -lgtest_main -o unit_tests ./unit_tests.cpp
+
+.PHONY: test
+test: tests/unit_tests
+	./tests/unit_tests
+
 # $(LIBOBJS): $(OBJDIR)%.o : library/%.h
 # 	$(CC) $(CFLAGS) -c $< -o $(OBJDIR)$@
 
