@@ -117,7 +117,7 @@ namespace sonicpp{
   void Connection<T>::ReadValidation(ServerInterface<T>* server)
   {
     asio::async_read(m_socket, asio::buffer(&m_nHandshakeIn, sizeof(m_nHandshakeIn)),
-      [this, server](std::error_code ec, std::size_t length)
+      [this, server](std::error_code ec, [[maybe_unused]] std::size_t length)
       {
         if(!ec)
         {
@@ -182,7 +182,7 @@ namespace sonicpp{
       if(m_nOwnerType == Owner::Client)
       {
         asio::async_connect(m_socket, endpoints,
-          [this](std::error_code ec, asio::ip::tcp::endpoint endpoint)
+          [this](std::error_code ec, [[maybe_unused]] asio::ip::tcp::endpoint endpoint)
           {
             if(!ec)
             {
@@ -235,7 +235,7 @@ namespace sonicpp{
     {
       bool success{true};
       asio::async_read(m_socket, asio::buffer(&m_msgTemporaryIn.header, sizeof(message_header<T>)),
-        [this, &success](std::error_code ec, std::size_t length)
+        [this, &success](std::error_code ec, [[maybe_unused]] std::size_t length)
         {
           if(!ec)
           {
@@ -263,7 +263,7 @@ namespace sonicpp{
     void Connection<T>::ReadBody()
     {
       asio::async_read(m_socket, asio::buffer(m_msgTemporaryIn.body.data(), m_msgTemporaryIn.body.size()),
-        [this](std::error_code ec, std::size_t length)
+        [this](std::error_code ec, [[maybe_unused]] std::size_t length)
         {
           if(!ec)
           {
@@ -284,7 +284,7 @@ namespace sonicpp{
     void Connection<T>::WriteHeader()
     {
         asio::async_write(m_socket, asio::buffer(&m_qMessagesOut.front().header, sizeof(message_header<T>)),
-        [this](std::error_code ec, std::size_t length)
+        [this](std::error_code ec, [[maybe_unused]] std::size_t length)
         {
           if(!ec)
           {
@@ -313,7 +313,7 @@ namespace sonicpp{
     void Connection<T>::WriteBody()
     {
         asio::async_write(m_socket, asio::buffer(m_qMessagesOut.front().body.data(), m_qMessagesOut.front().body.size()),
-        [this](std::error_code ec, std::size_t length)
+        [this](std::error_code ec, [[maybe_unused]] std::size_t length)
         {
           if(!ec)
           {
@@ -356,7 +356,7 @@ namespace sonicpp{
     void Connection<T>::WriteValidation()
     {
       asio::async_write(m_socket, asio::buffer(&m_nHandshakeOut, sizeof(m_nHandshakeOut)),
-      [this](std::error_code ec, std::size_t length)
+      [this](std::error_code ec, [[maybe_unused]] std::size_t length)
       {
           if(!ec)
           {

@@ -180,21 +180,22 @@ namespace sonicpp{
     
   // Functions that could be obertitten by the derrived class
   protected:
-    // Called when a new client connects 
-    virtual bool OnClientConnect(std::shared_ptr<Connection> client)
-    {return false;}
+    // Called when a new client tries to connect, returns connection approval
+    // It can't yet receive messages, for that use OnClientValidated 
+    virtual bool OnClientConnect([[maybe_unused]] std::shared_ptr<Connection> client)
+    {return true;}
     // Called when a client disconnects
-    virtual void OnClientDisconnect(std::shared_ptr<Connection> client)
+    virtual void OnClientDisconnect([[maybe_unused]] std::shared_ptr<Connection> client)
     {}
     // Called when a message arrives
-    virtual void OnMessage(std::shared_ptr<Connection> client, Message& msg)
+    virtual void OnMessage([[maybe_unused]] std::shared_ptr<Connection> client, [[maybe_unused]] Message& msg)
     {}
   public: 
-    // 
-    virtual void OnClientValidated(std::shared_ptr<Connection> client)
+    // Called when client is validated, it can now communicate with the server
+    virtual void OnClientValidated([[maybe_unused]] std::shared_ptr<Connection> client)
     {}
 
-  protected:
+  private:
     // Thread safe Queue of incoming message packets
     tsqueue<owned_message<T>> m_qMessagesIn;
 
@@ -205,7 +206,6 @@ namespace sonicpp{
     std::thread m_threadContext;
 
     asio::ip::tcp::acceptor m_asioAcceptor;
-
     uint32_t nIDCounter = 10000;
   };
   
