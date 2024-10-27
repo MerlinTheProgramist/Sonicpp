@@ -5,6 +5,7 @@
 #include "message.h"
 
 #include <asio/ip/address.hpp>
+#include <chrono>
 #include <memory>
 
 #include <asio.hpp>
@@ -103,8 +104,16 @@ namespace sonicpp{
         return false; 
     }
 
-    Message AwaitNextMessage(){
-      m_qMessagesIn.wait();
+    using duration = std::chrono::duration<float>;
+    std::optional<Message> AwaitNextMessage(duration timeout = duration::zero()){
+      if(timeout != duration::zero())
+        m_qMessagesIn.wait_for(timeout);
+      else 
+        m_qMessagesIn.wait();
+
+      if(m_qMessagesIn.is_empty())
+        return std::nullopt;
+
       return m_qMessagesIn.pop_front().msg;
     }
     
@@ -118,6 +127,13 @@ namespace sonicpp{
     void Send(Message& msg)
     {
       m_connection->Send(msg);
+    }
+
+    std::optional<uint32_t> GetID() const{
+      if(m_connection)
+        return m_connection->GetID();
+      else 
+        return std::nullopt;
     }
   };
 }

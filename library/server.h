@@ -195,12 +195,12 @@ namespace sonicpp{
     virtual void OnClientValidated([[maybe_unused]] std::shared_ptr<Connection> client)
     {}
 
+    // Container of active validated connections
+    std::deque<std::shared_ptr<Connection>> m_deqConnections;
   private:
     // Thread safe Queue of incoming message packets
     tsqueue<owned_message<T>> m_qMessagesIn;
 
-    // Container of active validated connections
-    std::deque<std::shared_ptr<Connection>> m_deqConnections;
     
     asio::io_context m_asioContext;
     std::thread m_threadContext;

@@ -84,6 +84,16 @@ namespace sonicpp
       deqQueue.clear();
     }
 
+    template<typename Rep>
+    void wait_for(std::chrono::duration<Rep> time)
+    {
+      while(is_empty())
+      {
+        // wait until push to queue
+        std::unique_lock<std::mutex> ul(muxBlocking);
+        cvBlocking.wait_for(ul, time);
+      }
+    }
     void wait()
     {
       while(is_empty())
@@ -91,7 +101,7 @@ namespace sonicpp
         // wait until push to queue
         std::unique_lock<std::mutex> ul(muxBlocking);
         cvBlocking.wait(ul);
-      }
+      }      
     }
   
   };
